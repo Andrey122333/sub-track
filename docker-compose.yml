@@ -12,7 +12,7 @@ services:
       - ./server:/app
       - /app/node_modules
     depends_on:
-      - mongo  # Зависимость от MongoDB
+      - mongo
 
   app-test:
     build:
