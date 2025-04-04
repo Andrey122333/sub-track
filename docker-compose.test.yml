@@ -7,10 +7,15 @@ services:
       target: test
     environment:
       - NODE_ENV=test
-      - MONGO_URI=mongodb://mongodb:27017/subscriptions_test
-    command: ["npm", "test"]
+      - MONGO_URI=${MONGO_URI}
+    depends_on:
+      mongodb:
+        condition: service_healthy
 
   mongodb:
-    image: mongo
-    environment:
-      MONGO_INITDB_DATABASE: subscriptions_test
+    image: mongo:6.0
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.runCommand('ping').ok", "-u", "root", "-p", "example", "--quiet"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
