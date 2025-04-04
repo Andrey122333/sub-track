@@ -65,17 +65,17 @@ services:
 
 
     # Сборка фронтенда (опционально, если используется React/Vue)
-  # client-builder:
-  #   build:
-  #     context: ./client
-  #     target: build
-  #     dockerfile: Dockerfile
-  #     args:
-  #       - VITE_API_URL=http://app:4000
-  #   command: npm run build
-  #   container_name: devops_client_build
-  #   volumes:
-  #     - ./client/dist:/app/dist  # Экспорт собранных файлов
+  client-builder:
+    build:
+      context: ./client
+      target: build
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=http://app:4000
+    command: npm run build
+    container_name: devops_client_build
+    volumes:
+      - ./client/dist:/app/dist  # Экспорт собранных файлов
 
 
   client-test:
