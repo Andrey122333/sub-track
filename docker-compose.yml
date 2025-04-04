@@ -22,7 +22,7 @@ services:
       API_BACKEND_URL: http://app:4000  # Для docker-сети
     volumes:
       - ./client/dist:/var/www/html  # Собранный фронтенд
-      - ./nginx/conf.d:/etc/nginx/conf.d  # Конфиги Nginx
+      - ./nginx/conf.d:/etc/nginx/conf.d
     ports:
       - "5050:80"
       - "443:443"
