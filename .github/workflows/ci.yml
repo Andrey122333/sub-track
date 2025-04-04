@@ -22,15 +22,10 @@ jobs:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
 
-      - name: Build and push server image
+      - name: Build and push app-server image
         run: |
           docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/app-server:latest -f server/Dockerfile ./server
           docker push ${{ secrets.DOCKER_HUB_USERNAME }}/app-server:latest
-
-      - name: Build and push client image
-        run: |
-          docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/app-client:latest -f client/Dockerfile ./client
-          docker push ${{ secrets.DOCKER_HUB_USERNAME }}/app-client:latest
 
   test:
     runs-on: ubuntu-latest
