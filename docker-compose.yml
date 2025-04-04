@@ -6,7 +6,7 @@ services:
     build:
       context: ./server
       target: dev
-    image: ${{ secrets.DOCKER_HUB_USERNAME }}/app:latest  # Добавлено имя и тег для Docker Hub
+    image: $$DOCKER_HUB_USERNAME/app:latest  # Экранирование $
     environment:
       - MONGO_URI=mongodb://admin:password@mongo:27017/subscriptions?authSource=admin
     volumes:
@@ -19,72 +19,7 @@ services:
     build:
       context: ./server
       target: test
-    image: ${{ secrets.DOCKER_HUB_USERNAME }}/app-test:latest  # Добавлено имя и тег для Docker Hub
+    image: $$DOCKER_HUB_USERNAME/app-test:latest  # Экранирование $
     environment:
       - NODE_ENV=test
-      - MONGO_URI=mongodb://admin:password@mongo-test:27017/subscriptions_test?authSource=admin
-    volumes:
-      - ./server:/app
-      - /app/node_modules
-    depends_on:
-      - mongo-test
-
-  nginx:
-    image: nginx:latest
-    environment:
-      API_BACKEND_URL: http://app:4000
-    volumes:
-      - ./client/dist:/var/www/html
-      - ./nginx/conf.d:/etc/nginx/conf.d
-    ports:
-      - "80:80"
-      - "443:443"
-    depends_on:
-      - app
-
-  mongo:
-    image: ${{ secrets.DOCKER_HUB_USERNAME }}/mongo:latest  # Добавлено имя и тег для Docker Hub
-    ports:
-      - "27017:27017"
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: password
-    volumes:
-      - mongodb_data:/data/db
-
-  mongo-test:
-    image: ${{ secrets.DOCKER_HUB_USERNAME }}/mongo-test:latest  # Добавлено имя и тег для Docker Hub
-    ports:
-      - "27038:27017"
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: password
-    volumes:
-      - mongodb_test_data:/data/db
-
-  client-builder:
-    build:
-      context: ./client
-      target: build
-      dockerfile: Dockerfile
-      args:
-        - VITE_API_URL=http://app:4000
-    image: ${{ secrets.DOCKER_HUB_USERNAME }}/client-builder:latest  # Добавлено имя и тег для Docker Hub
-    command: npm run build
-    container_name: devops_client_build
-    volumes:
-      - ./client/dist:/app/dist
-
-  client-test:
-    build:
-      context: ./client
-      target: test
-      dockerfile: Dockerfile
-      args:
-        - VITE_API_URL=http://app:4000
-    image: ${{ secrets.DOCKER_HUB_USERNAME }}/client-test:latest  # Добавлено имя и тег для Docker Hub
-    command: npm run test
-
-volumes:
-  mongodb_data:
-  mongodb_test_data:
+      - MONGO_URI=mongodb://admin:password@mongo-test:27017/subscriptions_test?auth
