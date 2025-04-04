@@ -10,11 +10,16 @@ env:
   DOCKER_BUILDKIT: 1
   COMPOSE_PROJECT_NAME: devops
   DOCKER_HUB_REPO: Andrey122333/sub-track  # Замените на ваш репозиторий
+  REGISTRY: ghcr.io  # Используем GitHub Container Registry
+  IMAGE_NAME: ${{ github.repository }}
   MONGO_URI_TEST: mongodb://admin:password@mongo-test:27017/subscriptions_test?authSource=admin
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      packages: write  # Необходимо для GHCR
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -22,17 +27,33 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
+      - name: Login to Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Build and tag images
         run: |
+          # Собираем образы через docker-compose
           docker compose -f docker-compose.yml build
-          docker tag devops_app ${{ env.DOCKER_HUB_REPO }}-app:latest
-          docker tag devops_app-test ${{ env.DOCKER_HUB_REPO }}-app-test:latest
-          docker tag devops_nginx ${{ env.DOCKER_HUB_REPO }}-nginx:latest
+          
+          # Тегируем образы для registry
+          docker tag ${COMPOSE_PROJECT_NAME}_app ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/app:latest
+          docker tag ${COMPOSE_PROJECT_NAME}_app-test ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/app-test:latest
+          docker tag ${COMPOSE_PROJECT_NAME}_nginx ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/nginx:latest
+
+      - name: Push images
+        run: |
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/app:latest
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/app-test:latest
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/nginx:latest
 
       - name: Start services for testing
         run: |
           docker compose -f docker-compose.yml up -d mongo mongo-test
-          sleep 10  # Ожидание инициализации БД
+          sleep 10  # Ожидаем инициализацию БД
 
   test:
     needs: build
