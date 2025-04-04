@@ -10,7 +10,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out repository
+      - name: Checkout repository
         uses: actions/checkout@v3
 
       - name: Set up Docker Buildx
@@ -22,7 +22,7 @@ jobs:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
 
-      - name: Build and push all images using Docker Compose
+      - name: Build and push Docker Compose services
         run: |
           docker compose -f docker-compose.yml build
           docker compose -f docker-compose.yml push
@@ -65,7 +65,7 @@ jobs:
 
       - name: SSH to the production server and deploy the Docker image
         run: |
-          ssh -o StrictHostKeyChecking=no user@your-server-ip "
+          ssh -o StrictHostKeyChecking=no devops@89.169.174.217 "
           docker login -u ${{ secrets.DOCKER_HUB_USERNAME }} -p ${{ secrets.DOCKER_HUB_PASSWORD }} && \
           docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/combined-app:latest && \
           docker run -d -p 80:80 ${{ secrets.DOCKER_HUB_USERNAME }}/combined-app:latest"
