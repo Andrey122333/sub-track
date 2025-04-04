@@ -63,7 +63,10 @@ jobs:
         run: |
           ansible-playbook -i ansible/inventory ansible/ansible-playbook.yml
 
-      - name: Pull and restart containers on production server
+      - name: SSH to the production server and deploy the Docker image
         run: |
-          docker compose down && \
-          docker compose up -d
+          ssh -o StrictHostKeyChecking=no user@your-server-ip "
+          docker login -u ${{ secrets.DOCKER_HUB_USERNAME }} -p ${{ secrets.DOCKER_HUB_PASSWORD }} && \
+          docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/combined-app:latest && \
+          docker run -d -p 80:80 ${{ secrets.DOCKER_HUB_USERNAME }}/combined-app:latest"
+
