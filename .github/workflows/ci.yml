@@ -1,4 +1,4 @@
-name: Docker CI/CD Pipeline
+name: CI/CD Pipeline with Docker
 
 on:
   push:
@@ -6,78 +6,58 @@ on:
   pull_request:
     branches: ["main"]
 
-env:
-  DOCKER_BUILDKIT: 1
-  COMPOSE_PROJECT_NAME: devops
-  DOCKER_HUB_REPO: andrey122333/sub-track  # Замените на ваш репозиторий
-  REGISTRY: ghcr.io  # Используем GitHub Container Registry
-  IMAGE_NAME: ghcr.io/andrey122333/sub-track
-  MONGO_URI_TEST: mongodb://admin:password@mongo-test:27017/subscriptions_test?authSource=admin
-
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions:
-      packages: write  # Необходимо для GHCR
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Login to Container Registry
-        uses: docker/login-action@v2
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and tag images
+      - name: Set up Docker
         run: |
-          # Собираем образы через docker-compose
-          docker compose -f docker-compose.yml build
-          
-          # Тегируем образы для registry
-          docker tag ${COMPOSE_PROJECT_NAME}_app ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/app:latest
-          docker tag ${COMPOSE_PROJECT_NAME}_app-test ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/app-test:latest
-          docker tag ${COMPOSE_PROJECT_NAME}_nginx ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/nginx:latest
+          docker --version
 
-      - name: Push images
+      - name: Build and tag Docker image for server
         run: |
-          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/app:latest
-          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/app-test:latest
-          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/nginx:latest
+          docker build -t myapp-server -f ./server/Dockerfile .
 
-      - name: Start services for testing
+      - name: Build and tag Docker image for client
         run: |
-          docker compose -f docker-compose.yml up -d mongo mongo-test
-          sleep 10  # Ожидаем инициализацию БД
+          docker build -t myapp-client -f ./client/Dockerfile .
 
-  test:
+      - name: Test Docker images
+        run: |
+          docker run --rm myapp-server npm test
+          docker run --rm myapp-client npm test
+
+  integration-tests:
+    runs-on: ubuntu-latest
     needs: build
-    runs-on: ubuntu-latest
+    services:
+      mongo:
+        image: mongo:6.0
+        ports:
+          - 27017:27017
+        env:
+          MONGO_INITDB_ROOT_USERNAME: admin
+          MONGO_INITDB_ROOT_PASSWORD: password
     steps:
-      - name: Run tests
-        run: |
-          docker compose -f docker-compose.yml run --rm app-test npm test
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-  push:
-    needs: [build, test]  # Зависит от успешного прохождения build и test
-    if: github.ref == 'refs/heads/main'  # Публикуем только при пуше в main
-    runs-on: ubuntu-latest
-    steps:
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_HUB_USERNAME }}
-          password: ${{ secrets.DOCKER_HUB_TOKEN }}
-
-      - name: Push images to Docker Hub
+      - name: Start Server Docker Container
         run: |
-          docker push ${{ env.DOCKER_HUB_REPO }}-app:latest
-          docker push ${{ env.DOCKER_HUB_REPO }}-app-test:latest
-          docker push ${{ env.DOCKER_HUB_REPO }}-nginx:latest
-          docker tag ${{ env.DOCKER_HUB_REPO }}-app:latest ${{ env.DOCKER_HUB_REPO }}-app:${{ github.sha }}
-          docker push ${{ env.DOCKER_HUB_REPO }}-app:${{ github.sha }}
+          docker run -d --name server -e MONGO_URI="mongodb://admin:password@localhost:27017/test_db?authSource=admin" myapp-server
+
+      - name: Start Client Docker Container
+        run: |
+          docker run -d --name client -p 8080:80 myapp-client
+
+      - name: Run Integration Tests
+        run: |
+          docker exec server npm run integration-tests
+
+      - name: Stop and Cleanup Containers
+        run: |
+          docker stop server client
+          docker rm server client
