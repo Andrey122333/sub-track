@@ -24,7 +24,7 @@ jobs:
 
       - name: Build and push server image
         run: |
-          docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/app-server:latest --target=prod -f server/Dockerfile ./server
+          docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/app-server:latest -f server/Dockerfile ./server
           docker push ${{ secrets.DOCKER_HUB_USERNAME }}/app-server:latest
 
       - name: Build and push client image
