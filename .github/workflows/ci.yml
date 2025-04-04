@@ -71,4 +71,4 @@ jobs:
       - name: Pull and restart containers on production server
         run: |
           docker compose down && \
-          docker compose up -d"
+          docker compose up -d
