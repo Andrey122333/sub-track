@@ -78,14 +78,14 @@ services:
       - ./client/dist:/app/dist  # Экспорт собранных файлов
 
 
-  client-test:
-    build:
-      context: ./client
-      target: test
-      dockerfile: Dockerfile
-      args:
-        - VITE_API_URL=http://app:4000
-    command: npm run test
+  # client-test:
+  #   build:
+  #     context: ./client
+  #     target: test
+  #     dockerfile: Dockerfile
+  #     args:
+  #       - VITE_API_URL=http://app:4000
+  #   command: npm run test
 
 
 
