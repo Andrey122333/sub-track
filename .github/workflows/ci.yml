@@ -24,15 +24,9 @@ jobs:
 
       - name: Build and push Docker Compose services
         run: |
-          docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/mongo:latest .
-          docker push ${{ secrets.DOCKER_HUB_USERNAME }}/mongo:latest
-          docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/app:latest .
-          docker push ${{ secrets.DOCKER_HUB_USERNAME }}/app:latest
-          docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/client-builder:latest .
-          docker push ${{ secrets.DOCKER_HUB_USERNAME }}/client-builder:latest
-          docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/nginx:latest .
-          docker push ${{ secrets.DOCKER_HUB_USERNAME }}/nginx:latest
-
+          docker compose -f docker-compose.yml build
+          docker compose -f docker-compose.yml push
+          
   test:
     runs-on: ubuntu-latest
     needs: build
@@ -69,10 +63,4 @@ jobs:
         run: |
           ansible-playbook -i ansible/inventory ansible/ansible-playbook.yml
 
-      - name: SSH to the production server and deploy the Docker image
-        run: |
-          ssh -o StrictHostKeyChecking=no devops@89.169.174.217 "
-          docker login -u ${{ secrets.DOCKER_HUB_USERNAME }} -p ${{ secrets.DOCKER_HUB_TOKEN }} && \
-          docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/combined-app:latest && \
-          docker run -d -p 80:80 ${{ secrets.DOCKER_HUB_USERNAME }}/combined-app:latest"
 
