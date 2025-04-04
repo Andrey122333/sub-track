@@ -30,18 +30,18 @@ jobs:
 
       - name: Build Docker images
         run: |
-          docker-compose -f docker-compose.yml build
+          docker compose -f docker-compose.yml build
 
       - name: Start services
         run: |
-          docker-compose -f docker-compose.yml up -d mongo
-          docker-compose -f docker-compose.yml up -d --build client-builder
-          docker-compose -f docker-compose.yml up -d app
+          docker compose -f docker-compose.yml up -d mongo
+          docker compose -f docker-compose.yml up -d --build client-builder
+          docker compose -f docker-compose.yml up -d app
 
       - name: Verify containers
         run: |
           docker ps -a
-          docker-compose logs app
+          docker compose logs app
 
   test:
     runs-on: ubuntu-latest
@@ -65,13 +65,13 @@ jobs:
           NODE_ENV: test
           MONGO_URI: ${{ env.MONGO_URI_TEST }}
         run: |
-          docker-compose run --rm app npm test
+          docker compose run --rm app npm test
 
       - name: Run client tests
         run: |
-          docker-compose run --rm client-builder npm run test
+          docker compose run --rm client-builder npm run test
 
       - name: Cleanup test containers
         if: always()
         run: |
-          docker-compose down
+          docker compose down
