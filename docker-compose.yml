@@ -15,6 +15,21 @@ services:
       - mongo  # Зависимость от MongoDB
     container_name: devops_app
 
+  app-test:
+    build:
+      context: ./server
+      target: dev
+    environment:
+      - NODE_ENV=test
+      - MONGO_URI=mongodb://admin:password@mongo-test:27017/subscriptions_test?authSource=admin
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+    depends_on:
+      - mongo-test
+    container_name: devops_app_test
+
+
   
   nginx:
     image: nginx:latest
@@ -41,6 +56,18 @@ services:
       - mongodb_data:/data/db
     container_name: devops_mongo
 
+  mongo-test:
+    image: mongo:6.0
+    ports:
+      - "27018:27017" 
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+    volumes:
+      - mongodb_test_data:/data/db
+    container_name: devops_mongo_test
+
+
 
     # Сборка фронтенда (опционально, если используется React/Vue)
   client-builder:
@@ -58,3 +85,4 @@ services:
 
 volumes:
   mongodb_data:
+  mongodb_test_data:
