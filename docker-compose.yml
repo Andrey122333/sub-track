@@ -37,7 +37,7 @@ services:
       - ./client/dist:/var/www/html  # Собранный 
       - ./nginx/conf.d:/etc/nginx/conf.d
     ports:
-      - "5050:80"
+      - "80:80"
       - "443:443"
     depends_on:
       - app
