@@ -24,8 +24,14 @@ jobs:
 
       - name: Build and push Docker Compose services
         run: |
-          docker compose -f docker-compose.yml build
-          docker compose -f docker-compose.yml push
+          docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/mongo:latest .
+          docker push ${{ secrets.DOCKER_HUB_USERNAME }}/mongo:latest
+          docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/app:latest .
+          docker push ${{ secrets.DOCKER_HUB_USERNAME }}/app:latest
+          docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/client-builder:latest .
+          docker push ${{ secrets.DOCKER_HUB_USERNAME }}/client-builder:latest
+          docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/nginx:latest .
+          docker push ${{ secrets.DOCKER_HUB_USERNAME }}/nginx:latest
 
   test:
     runs-on: ubuntu-latest
