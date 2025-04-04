@@ -10,7 +10,7 @@ app.use(express.json());
 // Определяем имя базы: если тесты, то используем "subscriptions_test", иначе "subscriptions"
 const dbName = process.env.NODE_ENV === 'test' ? 'subscriptions_test' : 'subscriptions';
 
-mongoose.connect(`mongodb://127.0.0.1:27017/${dbName}`, {
+mongoose.connect(`mongodb://admin:password@mongo:27017/${dbName}?authSource=admin`, {
   useNewUrlParser: true,
   useUnifiedTopology: true
 }).then(() => {

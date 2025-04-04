@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+
+  app:
+    build:
+      context: ./server
+      target: dev
+    environment:
+      - MONGO_URI=mongodb://admin:password@mongo:27017/subscriptions?authSource=admin
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+    depends_on:
+      - mongo  # Зависимость от MongoDB
+    container_name: devops_app
+
+  
+  nginx:
+    image: nginx:latest
+    environment:
+      API_BACKEND_URL: http://app:4000  # Для docker-сети
+    volumes:
+      - ./client/dist:/var/www/html  # Собранный фронтенд
+      - ./nginx/conf.d:/etc/nginx/conf.d  # Конфиги Nginx
+    ports:
+      - "5050:80"
+      - "443:443"
+    depends_on:
+      - app
+    container_name: devops_nginx
+
+  mongo:
+    image: mongo:6.0
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+    volumes:
+      - mongodb_data:/data/db
+    container_name: devops_mongo
+
+
+    # Сборка фронтенда (опционально, если используется React/Vue)
+  client-builder:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=http://app:4000
+    command: npm run build
+    container_name: devops_client_build
+    volumes:
+      - ./client/dist:/app/dist  # Экспорт собранных файлов
+
+
+
+volumes:
+  mongodb_data:

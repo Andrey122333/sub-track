@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: ./server
+      target: test
+    environment:
+      - NODE_ENV=test
+      - MONGO_URI=mongodb://mongodb:27017/subscriptions_test
+    command: ["npm", "test"]
+
+  mongodb:
+    image: mongo
+    environment:
+      MONGO_INITDB_DATABASE: subscriptions_test
