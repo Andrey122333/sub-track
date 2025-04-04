@@ -9,7 +9,7 @@ on:
 env:
   DOCKER_BUILDKIT: 1
   COMPOSE_PROJECT_NAME: devops
-  DOCKER_HUB_REPO: Andrey122333/sub-track  # Замените на ваш репозиторий
+  DOCKER_HUB_REPO: andrey122333/sub-track  # Замените на ваш репозиторий
   REGISTRY: ghcr.io  # Используем GitHub Container Registry
   IMAGE_NAME: ${{ github.repository }}
   MONGO_URI_TEST: mongodb://admin:password@mongo-test:27017/subscriptions_test?authSource=admin
