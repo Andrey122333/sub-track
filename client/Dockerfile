@@ -7,7 +7,7 @@ ENV VITE_API_URL=$VITE_API_URL
 WORKDIR /app
 
 # Установка зависимостей
-COPY package.json package-lock.json ./
+COPY package.json ./
 RUN npm install --include=dev
 
 # Копирование исходников
