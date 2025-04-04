@@ -66,7 +66,7 @@ jobs:
 
       - name: Run Ansible Playbook to install Docker
         run: |
-          ansible-playbook -i inventory install_docker.yml
+          ansible-playbook -i inventory ansible-playbook.yml
 
       - name: Pull and restart containers on production server
         run: |
