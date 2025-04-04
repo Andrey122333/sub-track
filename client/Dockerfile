@@ -7,7 +7,7 @@ ARG VITE_API_URL=http://app:4000
 ENV VITE_API_URL=$VITE_API_URL
 
 # Копируем package.json и устанавливаем зависимости
-COPY package.json package-lock.json ./
+COPY package.json ./
 RUN npm install --include=dev
 
 # Копируем исходники
@@ -25,7 +25,7 @@ ARG VITE_API_URL=http://app:4000
 ENV VITE_API_URL=$VITE_API_URL
 
 # Копируем package.json и устанавливаем зависимости
-COPY package.json package-lock.json ./
+COPY package.json ./
 RUN npm install --include=dev
 
 # Копируем исходники
