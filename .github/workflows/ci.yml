@@ -19,18 +19,18 @@ jobs:
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
         with:
-          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          rootname: ${{ secrets.DOCKER_HUB_rootNAME }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
 
       - name: Build and push server image
         run: |
-          docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/app-server:latest -f server/Dockerfile ./server
-          docker push ${{ secrets.DOCKER_HUB_USERNAME }}/app-server:latest
+          docker build -t ${{ secrets.DOCKER_HUB_rootNAME }}/app-server:latest -f server/Dockerfile ./server
+          docker push ${{ secrets.DOCKER_HUB_rootNAME }}/app-server:latest
 
       - name: Build and push client image
         run: |
-          docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/app-client:latest -f client/Dockerfile ./client
-          docker push ${{ secrets.DOCKER_HUB_USERNAME }}/app-client:latest
+          docker build -t ${{ secrets.DOCKER_HUB_rootNAME }}/app-client:latest -f client/Dockerfile ./client
+          docker push ${{ secrets.DOCKER_HUB_rootNAME }}/app-client:latest
 
   test:
     runs-on: ubuntu-latest
@@ -41,7 +41,7 @@ jobs:
         ports:
           - "27018:27017"
         env:
-          MONGO_INITDB_ROOT_USERNAME: admin
+          MONGO_INITDB_ROOT_rootNAME: admin
           MONGO_INITDB_ROOT_PASSWORD: password
     steps:
       - name: Check out repository
@@ -50,16 +50,27 @@ jobs:
       - name: Run tests inside containers
         run: |
           docker compose -f docker-compose.yml up app-test mongo-test  --abort-on-container-exit --exit-code-from app-test
-          docker compose -f docker-compose.yml up client-test app mongo --abort-on-container-exit --exit-code-from app-test
-
+          docker compose -f docker-compose.yml up client-test app mongo --abort-on-container-exit --exit-code-from client-test
 
   deploy:
     runs-on: ubuntu-latest
-    needs: test
+    needs: build
     steps:
-    - name: Pull and restart containers
-      run: |
-        ssh -o StrictHostKeyChecking=no root@176.222.53.130 "docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/app-server:latest && \
-        docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/app-client:latest && \
-        docker-compose down && \
-        docker-compose up -d"
+      - name: Check out repository
+        uses: actions/checkout@v3
+
+      - name: Set up SSH key for Ansible
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Run Ansible Playbook to install Docker
+        run: |
+          ansible-playbook -i inventory install_docker.yml
+
+      - name: Pull and restart containers on production server
+        run: |
+          ssh -o StrictHostKeyChecking=no devops@89.169.174.217 "docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/app-server:latest && \
+          docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/app-client:latest && \
+          docker-compose down && \
+          docker-compose up -d"
