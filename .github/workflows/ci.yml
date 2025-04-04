@@ -1,4 +1,4 @@
-name: CI/CD Pipeline with Docker
+name: Docker CI/CD Pipeline
 
 on:
   push:
@@ -6,58 +6,71 @@ on:
   pull_request:
     branches: ["main"]
 
+env:
+  DOCKER_BUILDKIT: 1
+  COMPOSE_PROJECT_NAME: devops
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ghcr.io/andrey122333/sub-track  # Все в нижнем регистре
+  MONGO_URI_TEST: mongodb://admin:password@mongo-test:27017/subscriptions_test?authSource=admin
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      packages: write
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Set up Docker
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to GHCR
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and tag images
         run: |
-          docker --version
+          docker compose -f docker-compose.yml build
+          docker tag ${COMPOSE_PROJECT_NAME}_app ${{ env.IMAGE_PREFIX }}-app:latest
+          docker tag ${COMPOSE_PROJECT_NAME}_app-test ${{ env.IMAGE_PREFIX }}-app-test:latest
 
-      - name: Build and tag Docker image for server
+      - name: Start services for testing
         run: |
-          docker build -t myapp-server -f ./server/Dockerfile .
+          docker compose -f docker-compose.yml up -d mongo mongo-test
+          sleep 15  # Увеличенное время для инициализации MongoDB
 
-      - name: Build and tag Docker image for client
-        run: |
-          docker build -t myapp-client -f ./client/Dockerfile .
-
-      - name: Test Docker images
-        run: |
-          docker run --rm myapp-server npm test
-          docker run --rm myapp-client npm test
-
-  integration-tests:
-    runs-on: ubuntu-latest
+  test:
     needs: build
-    services:
-      mongo:
-        image: mongo:6.0
-        ports:
-          - 27017:27017
-        env:
-          MONGO_INITDB_ROOT_USERNAME: admin
-          MONGO_INITDB_ROOT_PASSWORD: password
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Start Server Docker Container
+      - name: Run tests
         run: |
-          docker run -d --name server -e MONGO_URI="mongodb://admin:password@localhost:27017/test_db?authSource=admin" myapp-server
+          docker compose -f docker-compose.yml run --rm app-test npm test
 
-      - name: Start Client Docker Container
-        run: |
-          docker run -d --name client -p 8080:80 myapp-client
+      - name: Cleanup
+        if: always()
+        run: docker compose -f docker-compose.yml down
 
-      - name: Run Integration Tests
-        run: |
-          docker exec server npm run integration-tests
+  push:
+    needs: [build, test]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Login to GHCR
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Stop and Cleanup Containers
+      - name: Push images
         run: |
-          docker stop server client
-          docker rm server client
+          docker push ${{ env.IMAGE_PREFIX }}-app:latest
+          docker push ${{ env.IMAGE_PREFIX }}-app-test:latest
+          docker tag ${{ env.IMAGE_PREFIX }}-app:latest ${{ env.IMAGE_PREFIX }}-app:${{ github.sha }}
+          docker push ${{ env.IMAGE_PREFIX }}-app:${{ github.sha }}

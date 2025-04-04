@@ -13,7 +13,6 @@ services:
       - /app/node_modules
     depends_on:
       - mongo  # Зависимость от MongoDB
-    container_name: devops_app
 
   app-test:
     build:
@@ -27,7 +26,6 @@ services:
       - /app/node_modules
     depends_on:
       - mongo-test
-    container_name: devops_app_test
 
 
   
@@ -43,7 +41,6 @@ services:
       - "443:443"
     depends_on:
       - app
-    container_name: devops_nginx
 
   mongo:
     image: mongo:6.0
@@ -54,7 +51,6 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: password
     volumes:
       - mongodb_data:/data/db
-    container_name: devops_mongo
 
   mongo-test:
     image: mongo:6.0
@@ -65,7 +61,6 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: password
     volumes:
       - mongodb_test_data:/data/db
-    container_name: devops_mongo_test
 
 
 
