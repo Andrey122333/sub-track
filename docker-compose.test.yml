@@ -14,8 +14,8 @@ services:
 
   mongodb:
     image: mongo:6.0
-    healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.runCommand('ping').ok", "-u", "root", "-p", "example", "--quiet"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
