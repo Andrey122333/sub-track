@@ -32,9 +32,9 @@ services:
   nginx:
     image: nginx:latest
     environment:
-      API_BACKEND_URL: http://app:4000  # Для docker-сети
+      API_BACKEND_URL: http://app:4000 
     volumes:
-      - ./client/dist:/var/www/html  # Собранный 
+      - ./client/dist:/var/www/html 
       - ./nginx/conf.d:/etc/nginx/conf.d
     ports:
       - "80:80"
@@ -64,7 +64,7 @@ services:
 
 
 
-    # Сборка фронтенда (опционально, если используется React/Vue)
+
   client-builder:
     build:
       context: ./client
@@ -75,7 +75,7 @@ services:
     command: npm run build
     container_name: devops_client_build
     volumes:
-      - ./client/dist:/app/dist  # Экспорт собранных файлов
+      - ./client/dist:/app/dist 
 
 
   client-test:

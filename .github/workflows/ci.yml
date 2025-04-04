@@ -32,25 +32,24 @@ jobs:
           docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/app-client:latest -f client/Dockerfile ./client
           docker push ${{ secrets.DOCKER_HUB_USERNAME }}/app-client:latest
 
-  # test:
-  #   runs-on: ubuntu-latest
-  #   needs: build
-  #   services:
-  #     mongo-test:
-  #       image: mongo:6.0
-  #       ports:
-  #         - "27018:27017"
-  #       env:
-  #         MONGO_INITDB_ROOT_rootNAME: admin
-  #         MONGO_INITDB_ROOT_PASSWORD: password
-  #   steps:
-  #     - name: Check out repository
-  #       uses: actions/checkout@v3
+  test:
+    runs-on: ubuntu-latest
+    needs: build
+    services:
+      mongo-test:
+        image: mongo:6.0
+        ports:
+          - "27018:27017"
+        env:
+          MONGO_INITDB_ROOT_rootNAME: admin
+          MONGO_INITDB_ROOT_PASSWORD: password
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
 
-  #     - name: Run tests inside containers
-  #       run: |
-  #         docker compose -f docker-compose.yml up app-test mongo-test  --abort-on-container-exit --exit-code-from app-test
-  #         docker compose -f docker-compose.yml up client-test app mongo --abort-on-container-exit --exit-code-from client-test
+      - name: Run tests inside containers
+        run: |
+          docker compose -f docker-compose.yml up app-test mongo-test  --abort-on-container-exit --exit-code-from app-test
 
 
   deploy:
@@ -71,7 +70,5 @@ jobs:
 
       - name: Pull and restart containers on production server
         run: |
-          ssh -o StrictHostKeyChecking=no devops@89.169.174.217 "docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/app-server:latest && \
-          docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/app-client:latest && \
           docker-compose down && \
           docker-compose up -d"
